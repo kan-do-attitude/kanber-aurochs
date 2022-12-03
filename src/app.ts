@@ -84,9 +84,7 @@ export function buildApp(logging = true) {
           },
         },
         Link: {
-          id: (parent: Link) => parent.id,
-          description: (parent: Link) => parent.description,
-          url: (parent: Link) => parent.url,
+          description: (parent: Link) => `DESCRIPTION: ${parent.description}`,
         },
       },
     }),
