@@ -5,6 +5,7 @@
 		"check": "tsc --pretty --noEmit"
 	},
 	"dependencies": {
+		"@graphql-tools/schema": "^9.0.10",
 		"cross-env": "^7.0.3",
 		"fastify": "^4.10.2",
 		"graphql": "^16.6.0",
