@@ -1,5 +1,29 @@
-import { createYoga, createSchema } from 'graphql-yoga'
-import fastify, { FastifyReply, FastifyRequest } from 'fastify'
+import { createYoga, createSchema } from 'graphql-yoga';
+import fastify, { FastifyReply, FastifyRequest } from 'fastify';
+
+type Link = {
+  id: string;
+  url: string;
+  description: string;
+};
+
+const links: Link[] = [
+  {
+    id: 'link-0',
+    url: 'https://graphql-yoga.com/foo',
+    description: 'The easiest way of setting up a GraphQL server',
+  },
+  {
+    id: 'link-1',
+    url: 'https://graphql-yoga.com/bar',
+    description: 'The medium difficulty way of setting up a GraphQL server',
+  },
+  {
+    id: 'link-2',
+    url: 'https://graphql-yoga.com/fizz',
+    description: 'The hard way of setting up a GraphQL server',
+  },
+];
 
 export function buildApp(logging = true) {
   const app = fastify({
@@ -9,11 +33,11 @@ export function buildApp(logging = true) {
       },
       level: 'debug',
     },
-  })
+  });
 
   const graphQLServer = createYoga<{
-    req: FastifyRequest
-    reply: FastifyReply
+    req: FastifyRequest;
+    reply: FastifyReply;
   }>({
     schema: createSchema({
       typeDefs: /* GraphQL */ `
@@ -22,6 +46,8 @@ export function buildApp(logging = true) {
         type Query {
           hello: String
           isFastify: Boolean
+          info: String!
+          feed: [Link!]!
         }
         type Mutation {
           hello: String
@@ -30,11 +56,18 @@ export function buildApp(logging = true) {
         type Subscription {
           countdown(from: Int!, interval: Int!): Int!
         }
+        type Link {
+          id: ID!
+          description: String!
+          url: String!
+        }
       `,
       resolvers: {
         Query: {
           hello: () => 'world',
           isFastify: (_, __, context) => !!context.req && !!context.reply,
+          info: () => `This is the API of a Hackernews Clone`,
+          feed: () => links,
         },
         Mutation: {
           hello: () => 'world',
@@ -44,13 +77,16 @@ export function buildApp(logging = true) {
           countdown: {
             async *subscribe(_, { from, interval }) {
               for (let i = from; i >= 0; i--) {
-                await new Promise((resolve) =>
-                  setTimeout(resolve, interval ?? 1000),
-                )
-                yield { countdown: i }
+                await new Promise((resolve) => setTimeout(resolve, interval ?? 1000));
+                yield { countdown: i };
               }
             },
           },
+        },
+        Link: {
+          id: (parent: Link) => parent.id,
+          description: (parent: Link) => parent.description,
+          url: (parent: Link) => parent.url,
         },
       },
     }),
@@ -61,11 +97,9 @@ export function buildApp(logging = true) {
       warn: (...args) => args.forEach((arg) => app.log.warn(arg)),
       error: (...args) => args.forEach((arg) => app.log.error(arg)),
     },
-  })
+  });
 
-  app.addContentTypeParser('multipart/form-data', {}, (req, payload, done) =>
-    done(null),
-  )
+  app.addContentTypeParser('multipart/form-data', {}, (req, payload, done) => done(null));
 
   app.route({
     url: '/graphql',
@@ -74,18 +108,18 @@ export function buildApp(logging = true) {
       const response = await graphQLServer.handleNodeRequest(req, {
         req,
         reply,
-      })
+      });
       for (const [name, value] of response.headers) {
-        reply.header(name, value)
+        reply.header(name, value);
       }
 
-      reply.status(response.status)
+      reply.status(response.status);
 
-      reply.send(response.body)
+      reply.send(response.body);
 
-      return reply
+      return reply;
     },
-  })
+  });
 
-  return app
+  return app;
 }
