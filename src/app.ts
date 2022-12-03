@@ -51,10 +51,7 @@ export function buildApp(logging = true) {
         }
         type Mutation {
           hello: String
-          getFileName(file: File!): String
-        }
-        type Subscription {
-          countdown(from: Int!, interval: Int!): Int!
+          postLink(url: String!, description: String!): Link!
         }
         type Link {
           id: ID!
@@ -71,16 +68,16 @@ export function buildApp(logging = true) {
         },
         Mutation: {
           hello: () => 'world',
-          getFileName: (root, { file }: { file: File }) => file.name,
-        },
-        Subscription: {
-          countdown: {
-            async *subscribe(_, { from, interval }) {
-              for (let i = from; i >= 0; i--) {
-                await new Promise((resolve) => setTimeout(resolve, interval ?? 1000));
-                yield { countdown: i };
-              }
-            },
+          postLink: (_, args: { description: string; url: string }) => {
+            const link: Link = {
+              id: `link-${links.length}`,
+              description: args.description,
+              url: args.url,
+            };
+
+            links.push(link);
+
+            return link;
           },
         },
         Link: {
